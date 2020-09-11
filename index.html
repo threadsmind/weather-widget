@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>weather widget</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      background-color: #444444;
+      font-family: sans-serif;
+    }
+
+    body {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      margin: 0 auto;
+      background-color: #000000;
+      color: #f0f8ff;
+      text-align: center;
+    }
+
+    h1 {
+      padding: 1rem;
+    }
+
+    textarea {
+      min-width: 100%;
+      max-width: 100%;
+      min-height: 30rem;
+    }
+
+    #temp {
+      margin-bottom: 1rem;
+    }
+
+    #temp span {
+      font-size: 2rem;
+    }
+
+    #hourly {
+      display: flex;
+      flex-direction: row;
+      min-width: 100%;
+      max-width: 100%;
+      overflow: scroll;
+      background: #555;
+      box-shadow: 0 0 10px 0 #000 inset;
+      margin-bottom: 1rem;
+    }
+
+    #hourly div {
+      padding: 1rem;
+      border: solid #000;
+      border-width: 0 1px;
+    }
+
+    #json span {
+      cursor: pointer;
+      border: 1px solid #fff;
+      border-radius: 3px;
+      padding: 0.2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Weather Widget</h1>
+  <div id="input">
+    <input type="text" autocomplete="off" placeholder="123" value="98567f3582d532e6eec8d060b0f2d9dc" />
+    <button>Get Weather</button>
+  </div>
+  <div id="temp"></div>
+  <div id="hourly"></div>
+  <div id="json"></div>
+  <script>
+    const weatherData = { data: {} };
+    const UIjson = document.getElementById('json');
+    document.getElementsByTagName('button')[0].addEventListener('click', getWeather);
+    function getWeather() {
+      console.log('Getting weather...');
+      function getLocation() {
+        console.log('Getting location...');
+        return new Promise(function (success, fail) {
+          navigator.geolocation.getCurrentPosition(success, fail);
+        });
+      }
+      function showJsonData() {
+        UIjson.innerHTML = null;
+        UIjson.appendChild(document.createElement('textarea'));
+        UIjson.firstChild.value = JSON.stringify(weatherData.data, null, '  ');
+      }
+      function updateUI(data) {
+        console.log('Displaying weather data...');
+        document.getElementById('input').style.display = 'none';
+        UIjson.innerHTML = '<span>show full data</span>';
+        ['click', 'touchstart'].forEach((e) => {
+          UIjson.addEventListener(e, showJsonData, { once: true });
+        })
+        let timeString = new Date().toLocaleTimeString();
+        timeString = timeString.replace(timeString.substr(timeString.lastIndexOf(':'), 3), '').toLowerCase();
+        const temp = Math.round(parseFloat(data.current.temp));
+        document.getElementById('temp').innerHTML = `${timeString}: <span>${temp}</span>F`;
+        const UIhourly = document.getElementById('hourly');
+        for (i = 0; i < 12; i++) {
+          const hourlyBox = document.createElement('div');
+          const temp = Math.round(parseFloat(data.hourly[i].temp));
+          let time = new Date(data.hourly[i].dt * Math.pow(10, 3)).toLocaleTimeString();
+          time = time.replace(time.substr(time.indexOf(':'), 7), '').toLowerCase();
+          hourlyBox.innerHTML = `${temp}F<br>${time}`;
+          UIhourly.appendChild(hourlyBox);
+        }
+        weatherData.data = data;
+        console.log('Weather data displayed.');
+      }
+      getLocation()
+        .then((location) => {
+          console.log(`Getting weather data for lon:${location.coords.longitude} lat:${location.coords.latitude} ...`);
+          const id = document.getElementsByTagName('input')[0].value.replaceAll(' ', '');
+          const lat = location.coords.latitude;
+          const lon = location.coords.longitude;
+          return fetch(
+            `http://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&units=imperial&exclude=minutely,daily&appid=${id}`
+          );
+        })
+        .then((res) => {
+          console.log('Weather data received...');
+          return res.json()
+        })
+        .then((data) => { updateUI(data) })
+        .catch((err) => {
+          console.log(err.message);
+        });
+    }
+  </script>
+</body>
+
+</html>
