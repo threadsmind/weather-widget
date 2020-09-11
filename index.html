@@ -124,7 +124,7 @@
           const lat = location.coords.latitude;
           const lon = location.coords.longitude;
           return fetch(
-            `http://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&units=imperial&exclude=minutely,daily&appid=${id}`
+            `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&units=imperial&exclude=minutely,daily&appid=${id}`
           );
         })
         .then((res) => {
